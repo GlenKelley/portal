@@ -22,7 +22,7 @@ func (q *Quad) Mesh() ([]float32, []float32) {
     c := q.Center.Sub(px).Add(py)
     d := q.Center.Add(px).Add(py)
     o := q.Center
-    n := q.Center.Add(q.Normal)
+    n := q.Center.Add(q.Normal.Mul(0.2))
     return []float32{
         a[0],a[1],a[2],
         b[0],b[1],b[2],
