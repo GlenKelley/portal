@@ -1,7 +1,7 @@
 package portal
 
 import (
-    // "fmt"
+    "fmt"
     "math"
     gl "github.com/GlenKelley/go-gl32"
     glm "github.com/Jragonmiris/mathgl"
@@ -11,18 +11,18 @@ type Quad struct {
     Center glm.Vec4f
     Normal glm.Vec4f
     PlaneV glm.Vec4f
-    Size glm.Vec2f
+    Scale glm.Vec4f
 }
 
 func (q *Quad) Mesh() ([]float32, []float32) {
-    px := q.PlaneV.Mul(q.Size[0])
-    py := Cross3Dv(q.PlaneV, q.Normal).Mul(q.Size[1])
+    px := q.PlaneV.Mul(q.Scale[0])
+    py := Cross3Dv(q.PlaneV, q.Normal).Mul(q.Scale[1])
     a := q.Center.Sub(px).Sub(py)
     b := q.Center.Add(px).Sub(py)
     c := q.Center.Sub(px).Add(py)
     d := q.Center.Add(px).Add(py)
     o := q.Center
-    n := q.Center.Add(q.Normal.Mul(0.2))
+    n := q.Center.Add(q.Normal.Mul(q.Scale[2]*0.2))
     return []float32{
         a[0],a[1],a[2],
         b[0],b[1],b[2],
@@ -50,7 +50,7 @@ func (q *Quad) Apply(t glm.Mat4f) Quad {
         t.Mul4x1(q.Center),
         t.Mul4x1(q.Normal),
         t.Mul4x1(q.PlaneV),
-        q.Size,
+        t.Mul4x1(q.Scale),
     }
 }
 
@@ -77,28 +77,73 @@ func NearZero(v glm.Vec3f) bool {
 
 func RotationBetweenNormals(n1, n2 glm.Vec4f) glm.Mat4f {
     axis := Cross3D(n1, n2)
+    dot := n1.Dot(n2)
     if !NearZero(axis) {
-        dot := n1.Dot(n2)
         angle := float32(math.Acos(float64(dot)))
-        return glm.HomogRotate3D(angle, axis)
+        return glm.HomogRotate3D(angle, axis.Normalize())
+    } else if dot < 0 {
+        for e := 0; e < 3; e++ {
+            v := glm.Vec4f{}
+            v[e] = 1
+            cross := Cross3D(n1, v)
+            if !NearZero(cross) {
+                return glm.HomogRotate3D(math.Pi,cross.Normalize())
+            }
+        }
+        panic(fmt.Sprintln("no orthogonal axis found for normal", n1))
     }
     return glm.Ident4f()
 }
 func PortalTransform(a, b Quad) (glm.Mat4f, glm.Mat4f, glm.Mat4f, glm.Mat4f) {
-    ca := glm.Translate3D(-a.Center[0], -a.Center[1], -a.Center[2])
-    cb := glm.Translate3D(b.Center[0], b.Center[1], b.Center[2])
-    
-    rotate1 := RotationBetweenNormals(a.Normal, b.Normal)
-    rotate2 := RotationBetweenNormals(rotate1.Mul4x1(a.PlaneV), b.PlaneV)
-    transform := cb.Mul4(rotate2).Mul4(rotate1).Mul4(ca)
-    inverse := transform.Inv()
-    
     zn := glm.Vec4f{0,0,1,0}
-    fromA := RotationBetweenNormals(a.Normal, zn)
-    fromB := RotationBetweenNormals(b.Normal, zn)
+    xn := glm.Vec4f{1,0,0,0}
     
-    transformA := fromA.Mul4(ca)
-    transformB := fromB.Mul4(cb.Inv())
+    translateAZ := glm.Translate3D(-a.Center[0], -a.Center[1], -a.Center[2])
+    rotationAZ := RotationBetweenNormals(a.Normal, zn)
+    rotationAXZ := RotationBetweenNormals(rotationAZ.Mul4x1(a.PlaneV), xn)
+    scaleAZ := glm.Scale3D(1.0/a.Scale[0], 1.0/a.Scale[1], 1.0/a.Scale[2])
     
-    return transform, inverse, transformA, transformB
+    
+    AZ := scaleAZ.Mul4(rotationAXZ).Mul4(rotationAZ).Mul4(translateAZ)
+    ZA := AZ.Inv()
+    
+    translateBZ := glm.Translate3D(-b.Center[0], -b.Center[1], -b.Center[2])
+    rotationBZ := RotationBetweenNormals(b.Normal, zn)
+    rotationBXZ := RotationBetweenNormals(rotationBZ.Mul4x1(b.PlaneV), xn)
+    scaleBZ := glm.Scale3D(1.0/b.Scale[0], 1.0/b.Scale[1], 1.0/b.Scale[2])
+    
+    BZ := scaleBZ.Mul4(rotationBXZ).Mul4(rotationBZ).Mul4(translateBZ)
+    ZB := BZ.Inv()
+    
+    AB := ZB.Mul4(AZ)
+    BA := ZA.Mul4(BZ)
+    return AB, BA, AZ, BZ
+    
+    // return glm.Ident4f(), glm.Ident4f(), glm.Ident4f(), glm.Ident4f()
+    
+    
+    // scaleB := glm.SCale3d(b.Size[0], b.Size[1], 1)
+    
+    // scaleB := glm.Ident4f()//glm.Scale3D(b.Size[0], b.Size[1], b.Size[1])
+
+    // toBX := RotationBetweenNormals(xn, b.PlaneV)
+    // toBZ := RotationBetweenNormals(toBX.Mul4x1(zn), b.Normal)
+    
+    // rotate1 := RotationBetweenNormals(a.Normal, b.Normal)
+    // rotate2 := RotationBetweenNormals(rotate1.Mul4x1(a.PlaneV), b.PlaneV)
+
+    // ca := glm.Translate3D(-a.Center[0], -a.Center[1], -a.Center[2])
+    // cb := glm.Translate3D(b.Center[0], b.Center[1], b.Center[2])
+    //transform := cb.Mul4(scaleB).Mul4(scaleA).Mul4(rotate2).Mul4(rotate1).Mul4(ca)
+    // transform := cb.Mul4(toBZ).Mul4(toBX).Mul4(fromAX).Mul4(fromAZ).Mul4(ca)
+    // transform := scaleA.Mul4(fromAX).Mul4(fromAZ).Mul4(ca)
+    // 
+    // BA := AB.Inv()
+    // 
+    // fromA := RotationBetweenNormals(a.Normal, zn)
+    // fromB := RotationBetweenNormals(b.Normal, zn)
+    // 
+    // transformA := fromA.Mul4(ca)
+    // transformB := fromB.Mul4(cb.Inv())
+    
 }
