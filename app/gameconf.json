@@ -1,0 +1,8 @@
+{
+    "constants":{
+    },
+    "controls":{
+        "W":"MoveForward",
+        "mouse1":"Jump"
+    }
+}
