@@ -47,10 +47,10 @@ var QuadElements = map[gl.Enum][]int16 {
 
 func (q *Quad) Apply(t glm.Mat4d) Quad {
     return Quad {
-        t.Mul4x1(q.Center),
+        q.Center, //t.Mul4x1(q.Center),
         t.Mul4x1(q.Normal),
         t.Mul4x1(q.PlaneV),
-        t.Mul4x1(q.Scale),
+        q.Scale,//t.Mul4x1(q.Scale),
     }
 }
 
