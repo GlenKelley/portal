@@ -7,7 +7,7 @@ import (
    "strconv"
    "regexp"
    collada "github.com/GlenKelley/go-collada"
-   gl "github.com/GlenKelley/go-gl32"
+   gl "github.com/GlenKelley/go-gl/gl32"
    gtk "github.com/GlenKelley/go-glutil"
    model "github.com/GlenKelley/go-render"
    "github.com/GlenKelley/portal"

@@ -3,7 +3,7 @@ package portal
 import (
     "fmt"
     "math"
-    gl "github.com/GlenKelley/go-gl32"
+    gl "github.com/GlenKelley/go-gl/gl32"
     glm "github.com/Jragonmiris/mathgl"
 )
 
@@ -119,3 +119,5 @@ func PortalTransform(a, b Quad) (glm.Mat4d, glm.Mat4d, glm.Mat4d, glm.Mat4d) {
     BA := ZA.Mul4(BZ)
     return AB, BA, AZ, BZ
 }
+
+
