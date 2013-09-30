@@ -1,20 +1,18 @@
 package main
 
 import (
-   "encoding/json"
+   "os"
    "fmt"
    "math"
    "strconv"
    "regexp"
-   collada "github.com/GlenKelley/go-collada"
-   gl "github.com/GlenKelley/go-gl/gl32"
-   gtk "github.com/GlenKelley/go-glutil"
-   model "github.com/GlenKelley/go-render"
-   "github.com/GlenKelley/portal"
-   glm "github.com/Jragonmiris/mathgl"
+   "encoding/json"
    glfw "github.com/go-gl/glfw3"
-   // "math"
-   "os"
+   "github.com/GlenKelley/portal"
+   gl "github.com/GlenKelley/go-gl/gl32"
+   glm "github.com/Jragonmiris/mathgl"
+   gtk "github.com/GlenKelley/go-glutil"
+   collada "github.com/GlenKelley/go-collada"
 )
 
 func main() {
@@ -30,7 +28,7 @@ type Receiver struct {
    SceneLoc SceneBindings
    FillLoc  FillBindings
    
-   SceneIndex *model.Index
+   SceneIndex *gtk.Index
    Portals    []portal.Portal
 
    LastMousePosition    glm.Vec2d
@@ -206,7 +204,7 @@ func (r *Receiver) Init(window *glfw.Window) {
 func (r *Receiver) LoadScene(filename string) {
    doc, err := collada.LoadDocument(filename)
    panicOnErr(err)
-   index, err := model.NewIndex(doc)
+   index, err := gtk.NewIndex(doc)
    panicOnErr(err)
    r.SceneIndex = index
    
