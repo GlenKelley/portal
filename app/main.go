@@ -106,9 +106,9 @@ type Player struct {
 func (p *Player) Transform(m glm.Mat4d) {
    p.Position = m.Mul4x1(p.Position)
    p.Velocity = m.Mul4x1(p.Velocity)
-   r := m.RotationComponent()
+   r := gtk.RotationComponent(m)
    // fmt.Println("r",r)
-   q := r.Quaternion()
+   q := gtk.Quaternion(r)
    // fmt.Println("q", q)
    p.Orientation = q.Mul(p.Orientation)
    p.OrientationH = q.Mul(p.OrientationH)
@@ -594,7 +594,7 @@ func (r *Receiver) Simulate(gameTime gtk.GameTime) {
 
    p := r.Player.Position
    translate := glm.Translate3Dd(-p[0], -p[1], -p[2])
-   rotation := r.Player.Orientation.Mat4()
+   rotation := r.Player.Orientation.Conjugate().Mat4()
    r.Data.Cameraview = rotation.Mul4(translate)
 }
 
