@@ -21,6 +21,12 @@ func main() {
    gtk.CreateWindow(640, 480, "gotest", true, receiver)
 }
 
+func panicOnErr(err error) {
+   if err != nil {
+      panic(err)
+   }
+}
+
 type Receiver struct {
    Data     DataBindings
    Shaders  gtk.ShaderLibrary
@@ -117,11 +123,6 @@ type UIState struct {
    Movement glm.Vec4d
 }
 
-func panicOnErr(err error) {
-   if err != nil {
-      panic(err)
-   }
-}
 
 func (r *Receiver) ResetKeyBindingDefaults() {
    c := &r.Controls
@@ -165,11 +166,11 @@ func (r *Receiver) Init(window *glfw.Window) {
    r.Data.Cameraview = glm.Ident4d()
    r.Data.Inception = glm.Ident4d()
    
-   r.Data.Scene = gtk.EmptyModel()
+   r.Data.Scene = gtk.EmptyModel("root")
    r.LoadScene("portal.dae")
 
    quadElements := gtk.MakeElements(portal.QuadElements)
-   r.Data.Scene.AddGeometry(NewPlane(portal.Quad{
+   r.Data.Scene.AddGeometry(NewPlane("plane1", portal.Quad{
          glm.Vec4d{0, 0, 0, 1},
          glm.Vec4d{0, 1, 0, 0},
          glm.Vec4d{1, 0, 0, 0},
@@ -177,7 +178,7 @@ func (r *Receiver) Init(window *glfw.Window) {
       }, 
       quadElements,
    ))
-   r.Data.Fill = NewPlane(portal.Quad {
+   r.Data.Fill = NewPlane("plane1", portal.Quad {
          glm.Vec4d{0, 0, 0, 1},
          glm.Vec4d{0, 0, 1, 0},
          glm.Vec4d{1, 0, 0, 0},
@@ -187,9 +188,9 @@ func (r *Receiver) Init(window *glfw.Window) {
    )
    
    // r.Portals = append(r.Portals, CreatePortals()...)
-   r.Data.Portal = gtk.EmptyModel()
-   for _, p := range r.Portals {
-      r.Data.Portal.AddGeometry(NewPlane(p.EventHorizon, quadElements))
+   r.Data.Portal = gtk.EmptyModel("portals")
+   for i, p := range r.Portals {
+      r.Data.Portal.AddGeometry(NewPlane(fmt.Sprintf("portal_%d", i), p.EventHorizon, quadElements))
    }
    r.Player = Player{
       glm.Vec4d{0,1,0,1},
@@ -208,7 +209,7 @@ func (r *Receiver) LoadScene(filename string) {
    panicOnErr(err)
    r.SceneIndex = index
    
-   model := gtk.EmptyModel()
+   model := gtk.EmptyModel("scene")
    switch doc.Asset.UpAxis {
    case collada.Xup:
    case collada.Yup:
@@ -229,7 +230,7 @@ func (r *Receiver) LoadScene(filename string) {
             if drawElements != nil {
                elements = append(elements, drawElements)
             }
-            geometry := gtk.NewGeometry(pl.VertexData, pl.NormalData, elements)
+            geometry := gtk.NewGeometry(string(id), pl.VertexData, pl.NormalData, elements)
             geoms = append(geoms, geometry)  
          } else {
             fmt.Println("ignoring Portal")
@@ -252,7 +253,7 @@ func (r *Receiver) LoadScene(filename string) {
             geoms = append(geoms, geometryTemplates[geoid]...)
          }
          if len(geoms) > 0 {
-            child := gtk.NewModel([]*gtk.Model{}, geoms, transform)
+            child := gtk.NewModel(node.Name, []*gtk.Model{}, geoms, transform)
             model.AddChild(child)
          }
       } else {
@@ -326,9 +327,9 @@ func CreatePortals() []portal.Portal {
    return []portal.Portal{pa, pb}
 }
 
-func NewPlane(q portal.Quad, elements []*gtk.DrawElements) *gtk.Geometry {
+func NewPlane(name string, q portal.Quad, elements []*gtk.DrawElements) *gtk.Geometry {
    vs, ns := q.Mesh()
-   geometry := gtk.NewGeometry(vs,ns,elements)
+   geometry := gtk.NewGeometry(name, vs,ns,elements)
    return geometry
 }
 
