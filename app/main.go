@@ -12,13 +12,14 @@ import (
    gl "github.com/GlenKelley/go-gl/gl32"
    glm "github.com/Jragonmiris/mathgl"
    gtk "github.com/GlenKelley/go-glutil"
+   gameloop "github.com/GlenKelley/go-glutil/gameloop"
    collada "github.com/GlenKelley/go-collada"
 )
 
 func main() {
    fmt.Println("Start")
    receiver := &Receiver{}
-   gtk.CreateWindow(640, 480, "gotest", true, receiver)
+   gameloop.CreateWindow(640, 480, "gotest", true, receiver, false)
 }
 
 func panicOnErr(err error) {
@@ -40,7 +41,7 @@ type Receiver struct {
    LastMousePosition    glm.Vec2d
    HasLastMousePosition bool
 
-   SimulationTime  gtk.GameTime
+   SimulationTime  gameloop.GameTime
    Player         Player
    UIState        UIState
    Window         *glfw.Window
@@ -496,7 +497,7 @@ func (r *Receiver) DrawGeometry(geo *gtk.Geometry, vertexAttribute gl.AttributeL
 }
 
 func (r *Receiver) Reshape(window *glfw.Window, width, height int) {
-   aspectRatio := gtk.WindowAspectRatio(window)
+   aspectRatio := gameloop.WindowAspectRatio(window)
    fov := r.Constants.PlayerFOV
    r.Data.Projection = glm.Perspectived(fov, aspectRatio, r.Constants.PlayerViewNear, r.Constants.PlayerViewFar)
 }
@@ -537,7 +538,7 @@ func (r *Receiver) KeyPress(window *glfw.Window, k glfw.Key, s int, action glfw.
 func (r *Receiver) Scroll(window *glfw.Window, xoff float64, yoff float64) {
 }
 
-func (r *Receiver) Simulate(gameTime gtk.GameTime) {
+func (r *Receiver) Simulate(gameTime gameloop.GameTime) {
    r.SimulationTime = gameTime
    deltaT := gameTime.Delta.Seconds()
    
